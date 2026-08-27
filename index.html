@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JFKM - Manajemen Fogging Profesional</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTML2PDF CDN for invoice and report downloading -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        @media print {
+            body, html { background-color: white !important; margin: 0 !important; padding: 0 !important; }
+            .print\:hidden { display: none !important; }
+            .print-area { position: relative !important; width: 100% !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-300 min-h-screen selection:bg-amber-500/30 flex relative overflow-x-hidden">
+
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[200] flex flex-col space-y-2 pointer-events-none"></div>
+
+    <div id="login-overlay" class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center p-4 selection:bg-amber-500/30">
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-amber-600/10 blur-[120px] pointer-events-none"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[30%] h-[40%] rounded-full bg-blue-600/10 blur-[120px] pointer-events-none"></div>
+        
+        <div class="bg-slate-900/90 border border-slate-800/80 rounded-3xl p-8 md:p-10 max-w-md w-full shadow-2xl backdrop-blur-xl relative z-10 animate-fade-in">
+            <div class="text-center mb-8">
+                <div id="login-logo-container" class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 mb-4 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.2)] overflow-hidden">
+                    <svg viewBox="0 0 40 40" class="w-10 h-10 text-amber-500">
+                        <path fill="currentColor" d="M20 0L37.32 10V30L20 40L2.68 30V10L20 0ZM20 4L6.68 11.69V28.31L20 36L33.32 28.31V11.69L20 4Z" opacity="0.2"/>
+                        <path fill="none" stroke="currentColor" stroke-width="2" d="M20 2L38 10.5V29.5L20 38L2 29.5L10.5L20 2Z" />
+                        <text x="20" y="25" font-size="14" font-family="sans-serif" font-weight="bold" fill="currentColor" text-anchor="middle">JF</text>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-white tracking-wider">JFKM ADMIN</h1>
+                <p class="text-xs text-amber-500 font-medium tracking-widest mt-1">JASA FOGGING KELILING MAKASSAR</p>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Username Admin</label>
+                    <input required id="login-user" type="text" value="admin" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-500 transition font-medium" placeholder="Masukkan username">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Password</label>
+                    <input required id="login-pass" type="password" value="admin" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-500 transition font-medium" placeholder="Masukkan password">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-400 hover:from-amber-500 hover:to-amber-300 text-slate-950 font-bold rounded-xl transition shadow-[0_0_20px_rgba(245,158,11,0.3)] tracking-wide cursor-pointer">
+                    Masuk ke Sistem
+                </button>
+            </form>
+            <div class="mt-6 text-center">
+                <p class="text-[10px] text-slate-600 mt-2 uppercase tracking-wider">Developer: PCENK</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-amber-600/5 blur-[120px] pointer-events-none print:hidden"></div>
+    <div class="fixed bottom-[-10%] right-[-10%] w-[30%] h-[40%] rounded-full bg-blue-600/5 blur-[120px] pointer-events-none print:hidden"></div>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 md:hidden hidden" onclick="toggleMobileMenu(false)"></div>
+
+    <aside id="sidebar" class="fixed md:sticky top-0 left-0 h-screen w-72 bg-slate-950/95 backdrop-blur-xl border-r border-slate-800/60 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col print:hidden">
+        <div class="p-6 md:p-8 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div id="sidebar-logo-container" class="w-10 h-10 flex items-center justify-center overflow-hidden">
+                    <svg viewBox="0 0 40 40" class="w-10 h-10 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.4)]">
+                        <path fill="currentColor" d="M20 0L37.32 10V30L20 40L2.68 30V10L20 0ZM20 4L6.68 11.69V28.31L20 36L33.32 28.31V11.69L20 4Z" opacity="0.2"/>
+                        <path fill="none" stroke="currentColor" stroke-width="2" d="M20 2L38 10.5V29.5L20 38L2 29.5L10.5L20 2Z" />
+                        <text x="20" y="25" font-size="14" font-family="sans-serif" font-weight="bold" fill="currentColor" text-anchor="middle">JF</text>
+                    </svg>
+                </div>
+                <div>
+                    <h1 id="sidebar-company-name" class="text-xl font-light tracking-widest text-white uppercase leading-tight truncate w-36">JFKM</h1>
+                    <p id="sidebar-subtitle" class="text-[9px] text-slate-500 mt-0.5 tracking-tight leading-none">JASA FOGGING KELILING MAKASSAR</p>
+                </div>
+            </div>
+            <button class="md:hidden text-slate-400 hover:text-white" onclick="toggleMobileMenu(false)">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <nav class="flex-1 px-4 space-y-2 overflow-y-auto pb-4" id="nav-list">
+            <!-- Navigation items injected via JS -->
+        </nav>
+
+        <div class="p-4 md:p-6 mt-auto">
+            <div class="flex items-center space-x-3 p-4 bg-slate-900/50 rounded-2xl border border-slate-800/50">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-500 to-amber-200 p-[1px] shrink-0">
+                    <div class="w-full h-full rounded-full bg-slate-950 flex items-center justify-center">
+                        <span id="sidebar-initials" class="text-amber-400 font-bold text-sm">AD</span>
+                    </div>
+                </div>
+                <div class="text-left overflow-hidden">
+                    <p id="sidebar-director" class="text-sm font-medium text-slate-200 truncate">Bpk. Aditama</p>
+                    <p class="text-xs text-amber-500/80">JFKM Official</p>
+                </div>
+            </div>
+            <button onclick="handleLogout()" class="w-full mt-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl text-xs transition font-medium flex items-center justify-center space-x-2 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                <span>Keluar (Logout)</span>
+            </button>
+            <p class="text-[10px] text-slate-500 text-center mt-3 tracking-wider uppercase font-semibold">Developer: PCENK</p>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0 relative z-10 print:hidden h-screen overflow-hidden">
+        <header class="flex items-center justify-between px-4 md:px-8 py-4 md:py-6 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/50 sticky top-0 z-30">
+            <div class="flex items-center space-x-4">
+                <button class="md:hidden text-slate-300 hover:text-amber-400" onclick="toggleMobileMenu(true)">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <h2 id="topbar-title" class="text-lg md:text-xl font-semibold text-slate-100 tracking-wide truncate">Ringkasan Eksekutif</h2>
+            </div>
+            
+            <div class="flex items-center space-x-3 md:space-x-6 relative">
+                <!-- Notification Bell -->
+                <div class="relative" id="notif-container">
+                    <button onclick="toggleNotifications()" class="text-slate-400 hover:text-amber-400 transition-colors relative p-2 cursor-pointer">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                        <span id="notif-badge" class="absolute top-1 right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border border-slate-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]"></span>
+                    </button>
+
+                    <!-- Notifications Dropdown -->
+                    <div id="notif-dropdown" class="absolute right-0 mt-2 w-72 md:w-80 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50 hidden animate-fade-in origin-top-right">
+                        <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+                            <h3 class="text-sm font-semibold text-slate-200">Notifikasi</h3>
+                            <span id="notif-count-label" class="text-xs text-amber-500 bg-amber-500/10 px-2 py-1 rounded-full">2 Baru</span>
+                        </div>
+                        <div id="notif-list" class="max-h-80 overflow-y-auto divide-y divide-slate-800/50">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div onclick="markAllNotificationsRead()" class="p-3 text-center bg-slate-950/50 hover:bg-slate-900 transition cursor-pointer">
+                            <span class="text-xs text-amber-500 font-medium">Tandai semua dibaca</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="openScheduleModal()" class="theme-gradient-btn px-3 py-2 md:px-5 md:py-2.5 rounded-lg text-xs md:text-sm font-semibold tracking-wide transition-all shadow-lg flex items-center space-x-1 md:space-x-2 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>
+                    <span class="hidden sm:inline">Jadwal Baru</span>
+                    <span class="sm:hidden">Baru</span>
+                </button>
+            </div>
+        </header>
+        
+        <!-- Main Content Area -->
+        <div id="main-content" class="flex-1 overflow-y-auto pb-10 scroll-smooth">
+            <!-- Dynamic View Rendered Here -->
+        </div>
+    </main>
+
+    <div id="invoice-modal" class="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4 sm:p-6 print:p-0 print:block hidden">
+        <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm print:hidden" onclick="closeInvoiceModal()"></div>
+        <div class="relative bg-white text-slate-900 w-full h-full md:h-auto max-w-3xl md:max-h-[90vh] overflow-y-auto md:rounded-2xl shadow-2xl print:rounded-none print:shadow-none print:w-full print:max-w-none print:h-auto print:overflow-visible animate-fade-in print-area flex flex-col">
+            
+            <div class="sticky top-0 right-0 p-3 flex flex-wrap justify-end gap-2 bg-slate-100 border-b border-slate-200 print:hidden z-10 md:rounded-t-2xl shadow-sm">
+                <button onclick="downloadPDF()" class="flex-1 md:flex-none flex items-center justify-center space-x-2 px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-medium transition-colors cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <span>Download PDF</span>
+                </button>
+                <button onclick="window.print()" class="theme-gradient-btn px-3 py-2 font-medium rounded-lg text-sm transition-colors cursor-pointer flex items-center space-x-2">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    <span>Cetak</span>
+                </button>
+                <button onclick="closeInvoiceModal()" class="p-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg transition-colors cursor-pointer">
+                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div id="invoice-content" class="bg-white p-6 sm:p-10 md:p-14 flex-1">
+                <!-- Populated dynamically via JS -->
+            </div>
+        </div>
+    </div>
+
+    <div id="schedule-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden animate-fade-in">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg md:text-xl font-semibold text-slate-100">Buat Jadwal Baru</h3>
+                <button onclick="closeScheduleModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            <form onsubmit="handleCreateSchedule(event)" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Nama Klien/Instansi</label>
+                    <input required name="client" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500" placeholder="Contoh: Hotel Grand Clarion">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Lokasi di Makassar</label>
+                    <input required name="location" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500" placeholder="Alamat lengkap, misal: Jl. AP Pettarani">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Luas Area (Ketik angka, misal: 1500)</label>
+                    <input required name="area" id="input-schedule-area" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500" placeholder="1500" onfocus="unformatAreaInput(this)" onblur="formatAreaInput(this)">
+                    <p class="text-[11px] text-slate-500 mt-1">Satuan "m²" akan terisi otomatis saat selesai mengetik.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Tanggal</label>
+                        <input required name="date" type="date" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Waktu</label>
+                        <input required name="time" type="time" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+                    </div>
+                </div>
+                <div>
+                     <label class="block text-sm font-medium text-slate-400 mb-1">Penugasan Tim</label>
+                     <select name="team" id="schedule-team-select" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+                        <option value="Belum Ditugaskan">Belum Ditugaskan</option>
+                     </select>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button type="button" onclick="closeScheduleModal()" class="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 cursor-pointer">Batal</button>
+                    <button type="submit" class="theme-gradient-btn px-4 py-2 font-semibold rounded-lg text-sm transition-colors shadow-lg cursor-pointer">Simpan Jadwal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="inventory-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden animate-fade-in">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="inventory-modal-title" class="text-xl font-semibold text-slate-100">Tambah Barang Baru</h3>
+                <button onclick="closeInventoryModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            <form onsubmit="handleSaveInventory(event)" class="space-y-4">
+                <input type="hidden" id="inventory-edit-id" value="">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Nama Barang</label>
+                    <input required id="inv-name" name="name" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500" placeholder="Contoh: Insektisida / Solar">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Kuantitas Awal</label>
+                        <input required id="inv-qty" name="qty" type="number" min="0" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500" value="50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Satuan</label>
+                        <input required id="inv-unit" name="unit" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500" placeholder="Liter / Unit">
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button type="button" onclick="closeInventoryModal()" class="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 cursor-pointer">Batal</button>
+                    <button type="submit" class="theme-gradient-btn px-4 py-2 font-medium rounded-lg text-sm transition-colors shadow-lg cursor-pointer">Simpan Barang</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="team-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden animate-fade-in">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-semibold text-slate-100">Edit Data Tim</h3>
+                <button onclick="closeTeamModal()" class="text-slate-400 hover:text-slate-200 cursor-pointer"><svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"/></svg></button>
+            </div>
+            <form onsubmit="handleSaveTeam(event)" class="space-y-4">
+                <input type="hidden" id="team-edit-id" value="">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Nama Tim</label>
+                    <input required id="team-name" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Nama Ketua</label>
+                    <input required id="team-leader" type="text" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Jumlah Anggota</label>
+                    <input required id="team-members" type="number" min="1" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-800 flex justify-end space-x-3">
+                    <button type="button" onclick="closeTeamModal()" class="px-4 py-2 text-sm text-slate-400 hover:text-slate-200 cursor-pointer">Batal</button>
+                    <button type="submit" class="theme-gradient-btn px-4 py-2 font-medium rounded-lg text-sm transition-colors shadow-lg cursor-pointer">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const state = {
+            isLoggedIn: false,
+            activeTab: 'dashboard',
+            scheduleFilter: 'Semua',
+            adminPassword: 'admin',
+            themeMode: 'gold', // 'gold', 'emerald', 'logo'
+            dynamicLogoColor: '#f59e0b',
+            companyProfile: {
+                name: 'JFKM',
+                address: 'Jl. Jend. Sudirman No. 88, Makassar\ninfo@jfkm.id | (0411) 888-9999',
+                directorName: 'Bpk. Aditama',
+                bankInfo: 'BCA: 8765432100 a/n PT Jasa Fogging Keliling Makassar',
+                logoUrl: null,
+                signatureUrl: null
+            },
+            schedules: [
+                { id: 'JF-001', client: 'Hotel Grand Clarion', location: 'Jl. AP Pettarani, Makassar', area: '1.500 m²', date: '2026-08-28', time: '05:00', status: 'Selesai', team: 'Tim Alpha' },
+                { id: 'JF-002', client: 'Perumahan Panakkukang Mas', location: 'Jl. Boulevard, Makassar', area: '3.200 m²', date: '2026-08-29', time: '16:30', status: 'Dijadwalkan', team: 'Tim Beta' },
+                { id: 'JF-003', client: 'Kawasan Kima Square', location: 'Kima, Makassar', area: '5.000 m²', date: '2026-08-29', time: '18:00', status: 'Dijadwalkan', team: 'Tim Gamma' },
+                { id: 'JF-004', client: 'Losari Beach Hotel', location: 'Jl. Penghibur, Makassar', area: '2.400 m²', date: '2026-08-30', time: '06:00', status: 'Menunggu', team: 'Belum Ditugaskan' }
+            ],
+            transactions: [
+                { id: 'INV-2026-0801', date: '25 Agt 2026', client: 'Hotel Grand Clarion', amount: 4500000, status: 'Lunas', area: '1.500 m²', items: [{ desc: 'Fogging Area Outdoor', qty: 1, price: 2500000 }, { desc: 'Treatment Indoor Khusus', qty: 1, price: 2000000 }] },
+                { id: 'INV-2026-0802', date: '27 Agt 2026', client: 'Perumahan Panakkukang Mas', amount: 9600000, status: 'Lunas', area: '3.200 m²', items: [{ desc: 'Fogging Massal Kompleks', qty: 1, price: 9600000 }] },
+                { id: 'INV-2026-0803', date: '29 Agt 2026', client: 'Kawasan Kima Square', amount: 15000000, status: 'Menunggu', area: '5.000 m²', items: [{ desc: 'Fogging & Disinfeksi Kawasan Pabrik', qty: 1, price: 15000000 }] },
+                { id: 'INV-2026-0804', date: '30 Agt 2026', client: 'Losari Beach Hotel', amount: 7200000, status: 'Menunggu', area: '2.400 m²', items: [{ desc: 'Fogging Area Hotel & Taman', qty: 1, price: 7200000 }] }
+            ],
+            teams: [
+                { id: 'T-01', name: 'Tim Alpha', leader: 'Budi Santoso', members: 4, status: 'Lapangan' },
+                { id: 'T-02', name: 'Tim Beta', leader: 'Andi Wijaya', members: 3, status: 'Standby' },
+                { id: 'T-03', name: 'Tim Gamma', leader: 'Joko Anwar', members: 5, status: 'Standby' }
+            ],
+            inventory: [
+                { id: 'INV-001', name: 'Insektisida (Cypermethrin)', qty: 450, unit: 'Liter', status: 'Aman' },
+                { id: 'INV-002', name: 'Bahan Bakar (Solar)', qty: 80, unit: 'Liter', status: 'Menipis' },
+                { id: 'INV-003', name: 'Mesin Thermal Fogger', qty: 8, unit: 'Unit', status: 'Aman' }
+            ],
+            notifications: [
+                { id: 1, text: "Jadwal Fogging di Hotel Grand Clarion telah selesai.", time: "10 mnt lalu", unread: true },
+                { id: 2, text: "Invoice INV-2026-0801 berhasil dilunasi.", time: "1 jam lalu", unread: false },
+                { id: 3, text: "Stok Insektisida (Cypermethrin) terpantau aman.", time: "2 hari lalu", unread: false }
+            ],
+            selectedInvoice: null
+        };
+
+        const iconsMap = {
+            dashboard: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>',
+            calendar: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>',
+            currency: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>',
+            document: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>',
+            users: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>',
+            box: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>',
+            settings: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756.2924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>',
+            activity: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"/>',
+            droplet: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>',
+            mapPin: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>',
+            printer: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>',
+            pencil: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>'
+        };
+
+        const navItems = [
+            { id: 'dashboard', label: 'Ringkasan', icon: 'dashboard' },
+            { id: 'schedules', label: 'Jadwal Operasi', icon: 'calendar' },
+            { id: 'finance', label: 'Keuangan & Invoice', icon: 'currency' },
+            { id: 'reports', label: 'Laporan Keuangan', icon: 'document' },
+            { id: 'teams', label: 'Manajemen Tim', icon: 'users' },
+            { id: 'inventory', label: 'Inventaris', icon: 'box' },
+            { id: 'settings', label: 'Pengaturan', icon: 'settings' }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSidebar();
+            renderNotifications();
+            updateLoginLogo();
+            applyTheme();
+        });
+
+        function alertCustom(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-slate-900 border border-amber-500/40 text-slate-200 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-xl animate-fade-in pointer-events-auto flex items-center space-x-3 text-sm';
+            toast.innerHTML = `
+                <div class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></div>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function getThemeColors() {
+            if (state.themeMode === 'emerald') {
+                return { from: '#059669', to: '#34d399', text: '#10b981', border: 'rgba(16, 185, 129, 0.2)', bgGlow: 'rgba(16, 185, 129, 0.1)' };
+            } else if (state.themeMode === 'logo' && state.companyProfile.logoUrl) {
+                return { from: state.dynamicLogoColor, to: lightenColor(state.dynamicLogoColor, 30), text: state.dynamicLogoColor, border: hexToRgba(state.dynamicLogoColor, 0.2), bgGlow: hexToRgba(state.dynamicLogoColor, 0.1) };
+            }
+            // Default Gold/Amber
+            return { from: '#d97706', to: '#fbbf24', text: '#f59e0b', border: 'rgba(245, 158, 11, 0.2)', bgGlow: 'rgba(245, 158, 11, 0.1)' };
+        }
+
+        function hexToRgba(hex, alpha) {
+            let c = hex.replace('#','');
+            if(c.length===3) c = c.split('').map(x=>x+x).join('');
+            const num = parseInt(c,16);
+            return `rgba(${(num>>16)&255}, ${(num>>8)&255}, ${num&255}, ${alpha})`;
+        }
+
+        function lightenColor(hex, percent) {
+            let num = parseInt(hex.replace('#',''), 16);
+            let r = (num >> 16) + Math.round(2.55 * percent);
+            let g = ((num >> 8) & 0x00ff) + Math.round(2.55 * percent);
+            let b = (num & 0x0000ff) + Math.round(2.55 * percent);
+            return `#${(0x1000000 + (r<255?r<1?0:r:255)*0x10000 + (g<255?g<1?0:g:255)*0x100 + (b<255?b<1?0:b:255)).toString(16).slice(1)}`;
+        }
+
+        function extractDominantColor(imgElement) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 30;
+            canvas.height = 30;
+            ctx.drawImage(imgElement, 0, 0, 30, 30);
+            const data = ctx.getImageData(0, 0, 30, 30).data;
+            let r=0, g=0, b=0, count=0;
+            for (let i = 0; i < data.length; i += 4) {
+                if (data[i+3] > 128 && !(data[i] > 240 && data[i+1] > 240 && data[i+2] > 240) && !(data[i] < 15 && data[i+1] < 15 && data[i+2] < 15)) {
+                    r += data[i];
+                    g += data[i+1];
+                    b += data[i+2];
+                    count++;
+                }
+            }
+            if (count > 0) {
+                r = Math.floor(r / count);
+                g = Math.floor(g / count);
+                b = Math.floor(b / count);
+                return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+            }
+            return '#f59e0b';
+        }
+
+        function applyTheme() {
+            const colors = getThemeColors();
+            let styleEl = document.getElementById('dynamic-theme-style');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'dynamic-theme-style';
+                document.head.appendChild(styleEl);
+            }
+            styleEl.innerHTML = `
+                .theme-gradient-btn { background: linear-gradient(to right, ${colors.from}, ${colors.to}) !important; color: #020617 !important; }
+                .theme-gradient-btn:hover { opacity: 0.9; }
+                .theme-text-accent { color: ${colors.text} !important; }
+                .theme-border-accent { border-color: ${colors.border} !important; }
+                .theme-bg-accent-glow { background-color: ${colors.bgGlow} !important; }
+            `;
+        }
+
+        function setThemeMode(mode) {
+            state.themeMode = mode;
+            if (mode === 'logo' && state.companyProfile.logoUrl) {
+                const img = new Image();
+                img.src = state.companyProfile.logoUrl;
+                img.onload = () => {
+                    state.dynamicLogoColor = extractDominantColor(img);
+                    applyTheme();
+                    if (state.activeTab === 'settings') renderSettings(document.getElementById('main-content'));
+                };
+            } else {
+                applyTheme();
+                if (state.activeTab === 'settings') renderSettings(document.getElementById('main-content'));
+            }
+            alertCustom(`Tema berhasil diubah ke mode: ${mode === 'gold' ? 'Emas Mewah' : mode === 'emerald' ? 'Zamrud Hijau' : 'Sesuai Warna Logo'}`);
+        }
+
+        function updateLoginLogo() {
+            const container = document.getElementById('login-logo-container');
+            if (state.companyProfile.logoUrl) {
+                container.innerHTML = `<img src="${state.companyProfile.logoUrl}" class="w-full h-full object-contain">`;
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-user').value;
+            const p = document.getElementById('login-pass').value;
+            if(u === 'admin' && p === state.adminPassword) {
+                state.isLoggedIn = true;
+                document.getElementById('login-overlay').style.display = 'none';
+                alertCustom("Login Berhasil! Selamat datang di JFKM Admin.");
+                switchTab('dashboard');
+            } else {
+                alertCustom("Username atau Password salah! Default: admin / admin");
+            }
+        }
+
+        function handleLogout() {
+            state.isLoggedIn = false;
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('login-pass').value = '';
+            alertCustom("Berhasil keluar dari sistem.");
+        }
+
+        function formatAreaInput(input) {
+            let val = input.value.replace(/[^0-9]/g, '');
+            if (val) {
+                let num = parseInt(val, 10);
+                input.value = num.toLocaleString('id-ID') + ' m²';
+            }
+        }
+
+        function unformatAreaInput(input) {
+            let val = input.value.replace(/[^0-9]/g, '');
+            input.value = val ? val : '';
+        }
+
+        function toggleMobileMenu(open) {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            if(open) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+
+        function toggleNotifications() {
+            const dropdown = document.getElementById('notif-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function markAllNotificationsRead() {
+            state.notifications.forEach(n => n.unread = false);
+            renderNotifications();
+            alertCustom("Semua notifikasi telah ditandai dibaca.");
+        }
+
+        function renderNotifications() {
+            const listEl = document.getElementById('notif-list');
+            const badgeEl = document.getElementById('notif-badge');
+            const countLabel = document.getElementById('notif-count-label');
+
+            const unreadCount = state.notifications.filter(n => n.unread).length;
+            countLabel.innerText = `${unreadCount} Baru`;
+            if(unreadCount > 0) {
+                badgeEl.classList.remove('hidden');
+            } else {
+                badgeEl.classList.add('hidden');
+            }
+
+            listEl.innerHTML = state.notifications.map(n => `
+                <div class="p-4 hover:bg-slate-800/30 transition cursor-pointer ${n.unread ? 'bg-slate-800/10' : ''}">
+                    <p class="text-sm ${n.unread ? 'text-slate-200 font-medium' : 'text-slate-400'}">${n.text}</p>
+                    <p class="text-xs text-slate-500 mt-2">${n.time}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderSidebar() {
+            const navEl = document.getElementById('nav-list');
+            navEl.innerHTML = navItems.map(item => `
+                <button onclick="switchTab('${item.id}')" class="w-full flex items-center space-x-4 px-4 py-3 rounded-xl transition-all duration-300 group cursor-pointer ${
+                    state.activeTab === item.id 
+                        ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.05)]' 
+                        : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'
+                }">
+                    <div class="${state.activeTab === item.id ? 'text-amber-400' : 'text-slate-500 group-hover:text-slate-300'}">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap[item.icon]}</svg>
+                    </div>
+                    <span class="font-medium text-sm tracking-wide">${item.label}</span>
+                </button>
+            `).join('');
+
+            document.getElementById('sidebar-company-name').innerText = state.companyProfile.name;
+            document.getElementById('sidebar-subtitle').innerText = "JASA FOGGING KELILING MAKASSAR";
+            document.getElementById('sidebar-director').innerText = state.companyProfile.directorName;
+            document.getElementById('sidebar-initials').innerText = state.companyProfile.directorName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+            
+            const logoContainer = document.getElementById('sidebar-logo-container');
+            if(state.companyProfile.logoUrl) {
+                logoContainer.innerHTML = `<img src="${state.companyProfile.logoUrl}" class="w-10 h-10 object-contain drop-shadow-[0_0_10px_rgba(245,158,11,0.4)]">`;
+            } else {
+                logoContainer.innerHTML = `
+                    <svg viewBox="0 0 40 40" class="w-10 h-10 text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.4)]">
+                        <path fill="currentColor" d="M20 0L37.32 10V30L20 40L2.68 30V10L20 0ZM20 4L6.68 11.69V28.31L20 36L33.32 28.31V11.69L20 4Z" opacity="0.2"/>
+                        <path fill="none" stroke="currentColor" stroke-width="2" d="M20 2L38 10.5V29.5L20 38L2 29.5L10.5L20 2Z" />
+                        <text x="20" y="25" font-size="14" font-family="sans-serif" font-weight="bold" fill="currentColor" text-anchor="middle">JF</text>
+                    </svg>
+                `;
+            }
+        }
+
+        function switchTab(tabId) {
+            state.activeTab = tabId;
+            renderSidebar();
+            toggleMobileMenu(false);
+
+            const titles = {
+                dashboard: 'Ringkasan Eksekutif',
+                schedules: 'Manajemen Jadwal',
+                finance: 'Keuangan & Invoice',
+                reports: 'Laporan Keuangan Bulanan',
+                teams: 'Pengaturan Tim',
+                inventory: 'Stok & Inventaris',
+                settings: 'Pengaturan Sistem'
+            };
+            document.getElementById('topbar-title').innerText = titles[tabId];
+
+            const contentEl = document.getElementById('main-content');
+            if(tabId === 'dashboard') renderDashboard(contentEl);
+            else if(tabId === 'schedules') renderSchedules(contentEl);
+            else if(tabId === 'finance') renderFinance(contentEl);
+            else if(tabId === 'reports') renderReports(contentEl);
+            else if(tabId === 'teams') renderTeams(contentEl);
+            else if(tabId === 'inventory') renderInventory(contentEl);
+            else if(tabId === 'settings') renderSettings(contentEl);
+        }
+
+        function renderDashboard(container) {
+            const totalOps = state.schedules.length;
+            const pendingOps = state.schedules.filter(s => s.status === 'Menunggu').length;
+            const activeTeams = state.teams.filter(t => t.status === 'Lapangan').length;
+            const insecticide = state.inventory.find(i => i.name.includes('Insektisida'))?.qty || 0;
+
+            container.innerHTML = `
+                <div class="p-4 md:p-8 space-y-6 md:space-y-8 animate-fade-in">
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-4 md:p-6 rounded-2xl backdrop-blur-sm group relative overflow-hidden">
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3 md:mb-4 border border-amber-500/20">
+                                <svg class="w-4 h-4 md:w-5 md:h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.activity}</svg>
+                            </div>
+                            <h3 class="text-2xl md:text-3xl font-light text-slate-100 mb-1">${totalOps}</h3>
+                            <p class="text-xs md:text-sm text-slate-400 font-medium">Total Operasi</p>
+                        </div>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-4 md:p-6 rounded-2xl backdrop-blur-sm group relative overflow-hidden">
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3 md:mb-4 border border-amber-500/20">
+                                <svg class="w-4 h-4 md:w-5 md:h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.calendar}</svg>
+                            </div>
+                            <h3 class="text-2xl md:text-3xl font-light text-slate-100 mb-1">${pendingOps}</h3>
+                            <p class="text-xs md:text-sm text-slate-400 font-medium">Menunggu Jadwal</p>
+                        </div>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-4 md:p-6 rounded-2xl backdrop-blur-sm group relative overflow-hidden">
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3 md:mb-4 border border-amber-500/20">
+                                <svg class="w-4 h-4 md:w-5 md:h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.users}</svg>
+                            </div>
+                            <h3 class="text-2xl md:text-3xl font-light text-slate-100 mb-1">${activeTeams}</h3>
+                            <p class="text-xs md:text-sm text-slate-400 font-medium">Tim Lapangan</p>
+                        </div>
+                        <div class="bg-slate-900/40 border border-slate-800/60 p-4 md:p-6 rounded-2xl backdrop-blur-sm group relative overflow-hidden">
+                            <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-amber-500/10 flex items-center justify-center mb-3 md:mb-4 border border-amber-500/20">
+                                <svg class="w-4 h-4 md:w-5 md:h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.droplet}</svg>
+                            </div>
+                            <h3 class="text-2xl md:text-3xl font-light text-slate-100 mb-1">${insecticide}</h3>
+                            <p class="text-xs md:text-sm text-slate-400 font-medium">Stok Obat (L)</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                        <div class="lg:col-span-2 bg-slate-900/40 border border-slate-800/60 rounded-3xl p-6 md:p-8 backdrop-blur-sm">
+                            <h3 class="text-lg font-medium text-slate-200 mb-6 flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.activity}</svg>
+                                <span>Aktivitas Mendatang & Terbaru (Makassar)</span>
+                            </h3>
+                            <div class="space-y-4">
+                                ${state.schedules.slice(-4).reverse().map(sched => `
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-2xl bg-slate-950/50 border border-slate-800/40 gap-4">
+                                        <div class="flex items-center space-x-4">
+                                            <div class="w-12 h-12 rounded-full bg-slate-900 flex flex-col items-center justify-center border border-slate-800 shrink-0">
+                                                <span class="text-xs text-amber-500 font-bold">${sched.date.split('-')[2]}</span>
+                                                <span class="text-[10px] text-slate-500 uppercase">BLN</span>
+                                            </div>
+                                            <div>
+                                                <h4 class="text-slate-200 font-medium text-sm md:text-base">${sched.client} <span class="text-xs text-amber-400 ml-2">(${sched.area})</span></h4>
+                                                <div class="flex items-center space-x-2 text-xs text-slate-400 mt-1">
+                                                    <svg class="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.mapPin}</svg>
+                                                    <span class="truncate">${sched.location}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="sm:text-right flex sm:block items-center justify-between">
+                                            <span class="inline-block px-3 py-1 rounded-full text-[10px] md:text-xs font-medium border ${
+                                                sched.status === 'Selesai' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                sched.status === 'Dijadwalkan' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                                'bg-slate-800 text-slate-400 border-slate-700'
+                                            }">${sched.status}</span>
+                                            <span class="text-xs text-slate-500 sm:block sm:mt-1">${sched.time} WITA</span>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-amber-600/10 to-amber-900/10 border border-amber-500/20 rounded-3xl p-6 md:p-8 backdrop-blur-sm flex flex-col justify-between relative overflow-hidden">
+                            <div>
+                                <h3 class="text-amber-400 font-medium mb-2 tracking-wide uppercase text-sm">Status Cuaca Makassar</h3>
+                                <p class="text-4xl font-light text-slate-100 mb-2">Cerah</p>
+                                <p class="text-slate-400 text-sm">Kondisi sangat ideal untuk pelaksanaan fogging keliling di wilayah Makassar dan sekitarnya hari ini.</p>
+                            </div>
+                            <div class="mt-8">
+                                <div class="flex justify-between items-end border-b border-amber-500/20 pb-4">
+                                    <span class="text-slate-400 text-sm">Kecepatan Angin</span>
+                                    <span class="text-slate-200 font-medium">12 km/jam</span>
+                                </div>
+                                <div class="flex justify-between items-end pt-4">
+                                    <span class="text-slate-400 text-sm">Kelembaban</span>
+                                    <span class="text-slate-200 font-medium">65%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSchedules(container) {
+            const filtered = state.schedules.filter(s => state.scheduleFilter === 'Semua' || s.status === state.scheduleFilter);
+
+            container.innerHTML = `
+                <div class="p-4 md:p-8 animate-fade-in">
+                    <div class="bg-slate-900/40 border border-slate-800/60 rounded-3xl backdrop-blur-sm overflow-hidden">
+                        <div class="p-4 md:p-6 border-b border-slate-800/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div class="flex items-center space-x-3 flex-wrap gap-2">
+                                <h3 class="text-lg font-medium text-slate-200">Daftar Operasional JFKM</h3>
+                                <button onclick="clearCompletedSchedules()" class="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-xs transition font-medium cursor-pointer">Hapus Selesai</button>
+                                <button onclick="monthlyResetSchedules()" class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-lg text-xs transition font-medium cursor-pointer">Reset Bulanan</button>
+                            </div>
+                            <div class="flex flex-wrap gap-2 bg-slate-950 p-1 rounded-xl border border-slate-800 w-full sm:w-auto">
+                                ${['Semua', 'Menunggu', 'Dijadwalkan', 'Selesai'].map(f => `
+                                    <button onclick="setScheduleFilter('${f}')" class="px-3 md:px-4 py-1.5 text-xs md:text-sm rounded-lg transition-colors flex-1 sm:flex-none text-center cursor-pointer ${state.scheduleFilter === f ? 'bg-amber-500/20 text-amber-400 border border-amber-500/20' : 'text-slate-400 hover:text-slate-200'}">${f}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[700px]">
+                                <thead>
+                                    <tr class="bg-slate-950/50 border-b border-slate-800">
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Klien & Lokasi</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Luas Area</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Waktu</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Tim</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Status</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/50">
+                                    ${filtered.map(sched => `
+                                        <tr class="hover:bg-slate-800/20 transition-colors">
+                                            <td class="py-4 px-6">
+                                                <p class="text-slate-200 font-medium text-sm md:text-base">${sched.client}</p>
+                                                <p class="text-slate-500 text-xs mt-1 flex items-center">
+                                                    <svg class="w-3 h-3 mr-1 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.mapPin}</svg>
+                                                    <span class="truncate max-w-[220px]">${sched.location}</span>
+                                                </p>
+                                            </td>
+                                            <td class="py-4 px-6 text-sm text-amber-400 font-medium">${sched.area || '1.000 m²'}</td>
+                                            <td class="py-4 px-6">
+                                                <p class="text-slate-300 text-sm">${sched.date}</p>
+                                                <p class="text-slate-500 text-xs mt-1">${sched.time} WITA</p>
+                                            </td>
+                                            <td class="py-4 px-6 text-sm text-slate-400">${sched.team}</td>
+                                            <td class="py-4 px-6">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                                    sched.status === 'Selesai' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                                    sched.status === 'Dijadwalkan' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                                    'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                                }">${sched.status}</span>
+                                            </td>
+                                            <td class="py-4 px-6 text-right space-x-2">
+                                                ${sched.status === 'Menunggu' ? `<button onclick="updateScheduleStatus('${sched.id}', 'Dijadwalkan')" class="px-3 py-1.5 bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 rounded-lg text-xs transition cursor-pointer">Jadwalkan</button>` : ''}
+                                                ${sched.status === 'Dijadwalkan' ? `<button onclick="updateScheduleStatus('${sched.id}', 'Selesai')" class="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 rounded-lg text-xs transition cursor-pointer">Selesaikan</button>` : ''}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                    ${filtered.length === 0 ? `<tr><td colspan="6" class="py-8 text-center text-slate-500 text-sm">Tidak ada jadwal ditemukan.</td></tr>` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setScheduleFilter(filter) {
+            state.scheduleFilter = filter;
+            renderSchedules(document.getElementById('main-content'));
+        }
+
+        function updateScheduleStatus(id, newStatus) {
+            const sched = state.schedules.find(s => s.id === id);
+            if(sched) sched.status = newStatus;
+            renderSchedules(document.getElementById('main-content'));
+        }
+
+        function clearCompletedSchedules() {
+            const initialCount = state.schedules.length;
+            state.schedules = state.schedules.filter(s => s.status !== 'Selesai');
+            const removedCount = initialCount - state.schedules.length;
+            renderSchedules(document.getElementById('main-content'));
+            alertCustom(`${removedCount} jadwal berstatus 'Selesai' berhasil dihapus.`);
+        }
+
+        function monthlyResetSchedules() {
+            state.schedules = [];
+            renderSchedules(document.getElementById('main-content'));
+            alertCustom("Reset bulanan berhasil. Seluruh jadwal telah dikosongkan untuk periode baru.");
+        }
+
+        function renderFinance(container) {
+            const totalRev = state.transactions.reduce((acc, curr) => curr.status === 'Lunas' ? acc + curr.amount : acc, 0);
+            const pendingRev = state.transactions.reduce((acc, curr) => curr.status === 'Menunggu' ? acc + curr.amount : acc, 0);
+
+            container.innerHTML = `
+                <div class="p-4 md:p-8 animate-fade-in space-y-6 md:space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                        <div class="bg-gradient-to-br from-emerald-900/20 to-slate-900/40 border border-emerald-500/20 p-6 rounded-2xl backdrop-blur-sm relative overflow-hidden">
+                            <p class="text-xs md:text-sm text-slate-400 font-medium tracking-wide mb-1">Total Pendapatan (Bulan Ini)</p>
+                            <h3 class="text-2xl md:text-3xl font-light text-emerald-400">Rp ${totalRev.toLocaleString('id-ID')}</h3>
+                        </div>
+                        <div class="bg-gradient-to-br from-amber-900/20 to-slate-900/40 border border-amber-500/20 p-6 rounded-2xl backdrop-blur-sm relative overflow-hidden">
+                            <p class="text-xs md:text-sm text-slate-400 font-medium tracking-wide mb-1">Menunggu Pembayaran</p>
+                            <h3 class="text-2xl md:text-3xl font-light text-amber-400">Rp ${pendingRev.toLocaleString('id-ID')}</h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/40 border border-slate-800/60 rounded-3xl backdrop-blur-sm overflow-hidden">
+                        <div class="p-4 md:p-6 border-b border-slate-800/60">
+                            <h3 class="text-base md:text-lg font-medium text-slate-200 flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.document}</svg>
+                                <span>Riwayat Transaksi & Invoice JFKM</span>
+                            </h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[700px]">
+                                <thead>
+                                    <tr class="bg-slate-950/50">
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">No. Invoice</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Pelanggan</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Luas Area</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Total</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Status</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase text-right">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/50">
+                                    ${state.transactions.map(trx => `
+                                        <tr class="hover:bg-slate-800/20 transition-colors">
+                                            <td class="py-4 px-6">
+                                                <span class="font-mono text-sm text-amber-500/80">${trx.id}</span>
+                                                <p class="text-[10px] text-slate-500 mt-1">${trx.date}</p>
+                                            </td>
+                                            <td class="py-4 px-6 text-sm font-medium text-slate-200">${trx.client}</td>
+                                            <td class="py-4 px-6 text-sm text-amber-400">${trx.area || '1.000 m²'}</td>
+                                            <td class="py-4 px-6 text-sm text-slate-300">Rp ${trx.amount.toLocaleString('id-ID')}</td>
+                                            <td class="py-4 px-6">
+                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                                    trx.status === 'Lunas' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                                                }">${trx.status}</span>
+                                            </td>
+                                            <td class="py-4 px-6 text-right space-x-2 flex justify-end items-center">
+                                                ${trx.status === 'Menunggu' ? `<button onclick="payTransaction('${trx.id}')" class="px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 rounded-lg text-sm transition cursor-pointer">Bayar</button>` : ''}
+                                                <button onclick="openInvoiceModal('${trx.id}')" class="inline-flex items-center space-x-1 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition cursor-pointer">
+                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.printer}</svg>
+                                                    <span>Invoice</span>
+                                                </button>
+                                                <button onclick="deleteTransaction('${trx.id}')" class="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm transition cursor-pointer">Hapus</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function payTransaction(id) {
+            const trx = state.transactions.find(t => t.id === id);
+            if(trx) trx.status = 'Lunas';
+            renderFinance(document.getElementById('main-content'));
+        }
+
+        function deleteTransaction(id) {
+            state.transactions = state.transactions.filter(t => t.id !== id);
+            renderFinance(document.getElementById('main-content'));
+            alertCustom("Transaksi/Invoice berhasil dihapus.");
+        }
+
+        function renderReports(container) {
+            const totalTrxCount = state.transactions.length;
+            const totalRevenueAll = state.transactions.reduce((acc, curr) => curr.status === 'Lunas' ? acc + curr.amount : acc, 0);
+            const totalPendingAll = state.transactions.reduce((acc, curr) => curr.status === 'Menunggu' ? acc + curr.amount : acc, 0);
+
+            container.innerHTML = `
+                <div class="p-4 md:p-8 animate-fade-in space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 print:hidden">
+                        <div>
+                            <h3 class="text-lg font-medium text-slate-200">Laporan Rekapitulasi Keuangan Bulanan JFKM</h3>
+                            <p class="text-xs text-slate-400">Periode: Agustus 2026</p>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-medium transition flex items-center space-x-2 cursor-pointer">
+                                <svg class="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.printer}</svg>
+                                <span>Cetak Laporan</span>
+                            </button>
+                            <button onclick="downloadReportPDF()" class="theme-gradient-btn px-4 py-2 font-semibold rounded-xl text-sm transition flex items-center space-x-2 shadow-lg cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                <span>Download PDF</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="report-printable-area" class="bg-white text-slate-900 rounded-3xl p-6 md:p-10 shadow-2xl space-y-8">
+                        <div class="flex justify-between items-center border-b-2 border-slate-200 pb-6">
+                            <div class="flex items-center space-x-4">
+                                ${state.companyProfile.logoUrl ? `<img src="${state.companyProfile.logoUrl}" class="w-14 h-14 object-contain">` : `
+                                    <svg viewBox="0 0 40 40" class="w-14 h-14 text-amber-600">
+                                        <path fill="currentColor" d="M20 0L37.32 10V30L20 40L2.68 30V10L20 0ZM20 4L6.68 11.69V28.31L20 36L33.32 28.31V11.69L20 4Z" opacity="0.15"/>
+                                        <path fill="none" stroke="currentColor" stroke-width="2" d="M20 2L38 10.5V29.5L20 38L2 29.5L10.5L20 2Z" />
+                                        <text x="20" y="25" font-size="14" font-family="sans-serif" font-weight="bold" fill="currentColor" text-anchor="middle">JF</text>
+                                    </svg>
+                                `}
+                                <div>
+                                    <h1 class="text-xl font-bold tracking-widest text-slate-900 uppercase">${state.companyProfile.name}</h1>
+                                    <p class="text-[10px] text-amber-700 font-semibold uppercase tracking-wider">JASA FOGGING KELILING MAKASSAR</p>
+                                    <p class="text-xs text-slate-500 mt-1 whitespace-pre-line">${state.companyProfile.address}</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <h2 class="text-2xl font-light text-slate-800 uppercase tracking-wider">LAPORAN KEUANGAN</h2>
+                                <p class="text-xs text-slate-500 mt-1">Bulan: Agustus 2026</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+                                <p class="text-xs text-slate-500 uppercase font-semibold">Total Pendapatan (Lunas)</p>
+                                <p class="text-xl font-bold text-emerald-600 mt-1">Rp ${totalRevenueAll.toLocaleString('id-ID')}</p>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+                                <p class="text-xs text-slate-500 uppercase font-semibold">Belum Lunas (Menunggu)</p>
+                                <p class="text-xl font-bold text-amber-600 mt-1">Rp ${totalPendingAll.toLocaleString('id-ID')}</p>
+                            </div>
+                            <div class="bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+                                <p class="text-xs text-slate-500 uppercase font-semibold">Total Transaksi</p>
+                                <p class="text-xl font-bold text-slate-800 mt-1">${totalTrxCount} Nota</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 mb-4">Rincian Transaksi Periode Ini</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse min-w-[600px]">
+                                    <thead>
+                                        <tr class="border-b-2 border-slate-800 text-xs uppercase text-slate-700">
+                                            <th class="py-3">No. Invoice</th>
+                                            <th class="py-3">Tanggal</th>
+                                            <th class="py-3">Pelanggan</th>
+                                            <th class="py-3">Luas Area</th>
+                                            <th class="py-3">Status</th>
+                                            <th class="py-3 text-right">Jumlah (Rp)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-200 text-sm">
+                                        ${state.transactions.map(trx => `
+                                            <tr>
+                                                <td class="py-3 font-mono font-medium text-amber-700">${trx.id}</td>
+                                                <td class="py-3 text-slate-600">${trx.date}</td>
+                                                <td class="py-3 font-medium text-slate-800">${trx.client}</td>
+                                                <td class="py-3 text-slate-600">${trx.area || '1.000 m²'}</td>
+                                                <td class="py-3">
+                                                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold ${trx.status === 'Lunas' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${trx.status}</span>
+                                                </td>
+                                                <td class="py-3 text-right font-semibold text-slate-800">Rp ${trx.amount.toLocaleString('id-ID')}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-8">
+                            <div class="text-center">
+                                <p class="text-xs text-slate-600 mb-4">Makassar, 31 Agustus 2026<br>Mengetahui,</p>
+                                <div class="h-16 w-36 mx-auto flex items-center justify-center mb-2">
+                                    ${state.companyProfile.signatureUrl ? `<img src="${state.companyProfile.signatureUrl}" class="max-h-full object-contain mix-blend-multiply">` : `
+                                        <svg viewBox="0 0 200 80" class="w-32 h-14 text-blue-900">
+                                            <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M20,60 C30,30 45,10 60,40 C65,50 75,75 85,55 C95,35 110,10 120,40 C130,70 135,75 145,55 C155,35 170,20 180,45 C185,55 195,60 200,50" />
+                                        </svg>
+                                    `}
+                                </div>
+                                <p class="text-xs font-bold text-slate-800 border-t border-slate-300 pt-2 px-4 inline-block">${state.companyProfile.directorName}</p>
+                                <p class="text-[10px] text-slate-500 mt-0.5">Direktur Utama JFKM</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function downloadReportPDF() {
+            const element = document.getElementById('report-printable-area');
+            const opt = {
+                margin: 0,
+                filename: 'Laporan-Keuangan-JFKM-Agustus-2026.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+
+        function renderTeams(container) {
+            container.innerHTML = `
+                <div class="p-4 md:p-8 animate-fade-in">
+                    <div class="bg-slate-900/40 border border-slate-800/60 rounded-3xl backdrop-blur-sm overflow-hidden">
+                        <div class="p-4 md:p-6 border-b border-slate-800/60">
+                            <h3 class="text-lg font-medium text-slate-200">Personel & Tim Lapangan JFKM</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 p-4 md:p-6">
+                            ${state.teams.map(team => `
+                                <div class="bg-slate-950/50 border border-slate-800/60 rounded-2xl p-5 md:p-6 relative group hover:border-slate-700 transition-colors">
+                                    <div class="flex justify-between items-start mb-4">
+                                        <div>
+                                            <div class="flex items-center space-x-2">
+                                                <h4 class="text-lg font-semibold text-amber-400">${team.name}</h4>
+                                                <button onclick="openTeamModal('${team.id}')" class="text-slate-500 hover:text-amber-400 transition-colors cursor-pointer" title="Edit Tim">
+                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.pencil}</svg>
+                                                </button>
+                                            </div>
+                                            <p class="text-sm text-slate-400">Ketua: ${team.leader}</p>
+                                        </div>
+                                        <span class="px-3 py-1 rounded-full text-[10px] md:text-xs font-medium border ${
+                                            team.status === 'Lapangan' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
+                                            team.status === 'Standby' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                            'bg-slate-800 text-slate-400 border-slate-700'
+                                        }">${team.status}</span>
+                                    </div>
+                                    <div class="flex items-center text-sm text-slate-500 mb-6">
+                                        <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.users}</svg>
+                                        ${team.members} Anggota Aktif
+                                    </div>
+                                    <button onclick="toggleTeamStatus('${team.id}')" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm transition cursor-pointer">Ubah Status</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleTeamStatus(id) {
+            const team = state.teams.find(t => t.id === id);
+            if(team) {
+                team.status = team.status === 'Standby' ? 'Lapangan' : team.status === 'Lapangan' ? 'Cuti' : 'Standby';
+            }
+            renderTeams(document.getElementById('main-content'));
+        }
+
+        function renderInventory(container) {
+            container.innerHTML = `
+                <div class="p-4 md:p-8 animate-fade-in space-y-6">
+                    <div class="bg-slate-900/40 border border-slate-800/60 rounded-3xl backdrop-blur-sm overflow-hidden">
+                        <div class="p-4 md:p-6 border-b border-slate-800/60 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <h3 class="text-lg font-medium text-slate-200">Stok & Inventaris Barang JFKM</h3>
+                            <button onclick="openInventoryModal()" class="theme-gradient-btn px-4 py-2 font-semibold rounded-xl text-xs md:text-sm transition shadow-lg flex items-center space-x-2 cursor-pointer">
+                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/></svg>
+                                <span>Tambah Barang Baru</span>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[700px]">
+                                <thead>
+                                    <tr class="bg-slate-950/50">
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Nama Barang</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Kuantitas</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase">Status</th>
+                                        <th class="py-4 px-6 text-xs font-medium text-slate-500 uppercase text-right">Kelola Stok & Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800/50">
+                                    ${state.inventory.map(item => `
+                                        <tr class="hover:bg-slate-800/20 transition-colors">
+                                            <td class="py-4 px-6 font-medium text-slate-200">${item.name}</td>
+                                            <td class="py-4 px-6 text-slate-300 font-semibold">${item.qty} ${item.unit}</td>
+                                            <td class="py-4 px-6">
+                                                <span class="px-2.5 py-1 rounded-full text-xs font-medium border ${item.status === 'Aman' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'}">${item.status}</span>
+                                            </td>
+                                            <td class="py-4 px-6 text-right space-x-2 flex justify-end items-center">
+                                                <div class="inline-flex rounded-lg bg-slate-950 border border-slate-700 overflow-hidden mr-2">
+                                                    <button onclick="adjustInventoryQty('${item.id}', -10)" class="px-2.5 py-1 text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition cursor-pointer">-10</button>
+                                                    <span class="w-[1px] bg-slate-700"></span>
+                                                    <button onclick="adjustInventoryQty('${item.id}', 10)" class="px-2.5 py-1 text-slate-400 hover:bg-emerald-500/20 hover:text-emerald-400 transition cursor-pointer">+10</button>
+                                                </div>
+                                                <button onclick="openInventoryModal('${item.id}')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition cursor-pointer">Edit</button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function adjustInventoryQty(id, amount) {
+            const item = state.inventory.find(i => i.id === id);
+            if(item) {
+                item.qty = Math.max(0, item.qty + amount);
+                item.status = item.qty > 50 ? 'Aman' : 'Menipis';
+            }
+            renderInventory(document.getElementById('main-content'));
+        }
+
+        function renderSettings(container) {
+            container.innerHTML = `
+                <div class="p-4 md:p-8 animate-fade-in max-w-4xl mx-auto space-y-8">
+                    <div class="bg-slate-900/40 border border-slate-800/60 rounded-3xl backdrop-blur-sm overflow-hidden">
+                        <div class="p-4 md:p-6 border-b border-slate-800/60">
+                            <h3 class="text-lg font-medium text-slate-200 flex items-center space-x-2">
+                                <svg class="w-5 h-5 theme-text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">${iconsMap.settings}</svg>
+                                <span>Pengaturan Profil & Rekening JFKM</span>
+                            </h3>
+                            <p class="text-sm text-slate-400 mt-1">Sesuaikan identitas perusahaan dan informasi pembayaran yang akan tampil pada cetakan Invoice.</p>
+                        </div>
+                        
+                        <div class="p-4 md:p-6 space-y-8">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-400 mb-1">Nama Perusahaan</label>
+                                        <input type="text" id="set-name" value="${state.companyProfile.name}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-400 mb-1">Nama Direktur / Penandatangan</label>
+                                        <input type="text" id="set-director" value="${state.companyProfile.directorName}" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-amber-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-slate-400 mb-1">Informasi Rekening / Pembayaran</label>
+                                        <textarea id="set-bank" rows="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-amber-500 resize-none">${state.companyProfile.bankInfo}</textarea>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-slate-400 mb-1">Alamat & Kontak</label>
+                                    <textarea id="set-address" rows="5" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-amber-500 resize-none">${state.companyProfile.address}</textarea>
+                                </div>
+                            </div>
+
+                            <!-- Tema Warna Aplikasi -->
+                            <div class="pt-6 border-t border-slate-800/60 space-y-4">
+                                <h4 class="text-sm font-medium text-slate-200">Pilihan Tema Warna Aplikasi</h4>
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div onclick="setThemeMode('gold')" class="cursor-pointer p-4 rounded-2xl border ${state.themeMode === 'gold' ? 'border-amber-500 bg-amber-500/10' : 'border-slate-800 bg-slate-950/50'} transition flex items-center space-x-3">
+                                        <div class="w-6 h-6 rounded-full bg-gradient-to-r from-amber-600 to-amber-400"></div>
+                                        <div>
+                                            <p class="text-sm font-medium text-slate-200">Emas Mewah</p>
+                                            <p class="text-xs text-slate-500">Solid Gradient Amber</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="setThemeMode('emerald')" class="cursor-pointer p-4 rounded-2xl border ${state.themeMode === 'emerald' ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-800 bg-slate-950/50'} transition flex items-center space-x-3">
+                                        <div class="w-6 h-6 rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400"></div>
+                                        <div>
+                                            <p class="text-sm font-medium text-slate-200">Zamrud Hijau</p>
+                                            <p class="text-xs text-slate-500">Solid Gradient Emerald</p>
+                                        </div>
+                                    </div>
+                                    <div onclick="setThemeMode('logo')" class="cursor-pointer p-4 rounded-2xl border ${state.themeMode === 'logo' ? 'border-blue-500 bg-blue-500/10' : 'border-slate-800 bg-slate-950/50'} transition flex items-center space-x-3">
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center border border-slate-700" style="background: ${state.companyProfile.logoUrl ? state.dynamicLogoColor : '#334155'}"></div>
+                                        <div>
+                                            <p class="text-sm font-medium text-slate-200">Sesuai Warna Logo</p>
+                                            <p class="text-xs text-slate-500">Otomatis Ekstrak Logo</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-slate-800/60">
+                                <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 border-dashed">
+                                    <label class="block text-sm font-medium text-slate-300 mb-4">Logo Perusahaan</label>
+                                    <div class="flex items-center space-x-6">
+                                        <div class="w-20 h-20 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0">
+                                            ${state.companyProfile.logoUrl ? `<img src="${state.companyProfile.logoUrl}" class="w-full h-full object-contain p-2">` : '<span class="text-xs text-slate-500 text-center px-2">Belum ada logo</span>'}
+                                        </div>
+                                        <div>
+                                            <input type="file" accept="image/*" id="logoUpload" class="hidden" onchange="handleImageUpload(event, 'logoUrl')">
+                                            <label for="logoUpload" class="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700">
+                                                <span>Pilih Gambar</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-950/50 p-4 rounded-2xl border border-slate-800 border-dashed">
+                                    <label class="block text-sm font-medium text-slate-300 mb-4">Tanda Tangan (TTD)</label>
+                                    <div class="flex items-center space-x-6">
+                                        <div class="w-32 h-20 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center overflow-hidden shrink-0 bg-white/5">
+                                            ${state.companyProfile.signatureUrl ? `<img src="${state.companyProfile.signatureUrl}" class="w-full h-full object-contain p-2">` : '<span class="text-xs text-slate-500 text-center px-2">Belum ada TTD</span>'}
+                                        </div>
+                                        <div>
+                                            <input type="file" accept="image/*" id="sigUpload" class="hidden" onchange="handleImageUpload(event, 'signatureUrl')">
+                                            <label for="sigUpload" class="cursor-pointer inline-flex items-center space-x-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm border border-slate-700">
+                                                <span>Pilih Gambar TTD</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-950/50 p-6 rounded-2xl border border-slate-800 space-y-4">
+                                <h4 class="text-sm font-medium text-slate-300">Keamanan & Ubah Password Admin</h4>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Password Baru</label>
+                                    <input type="password" id="set-new-pass" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-200 focus:outline-none focus:border-amber-500" placeholder="Masukkan password baru">
+                                </div>
+                                <button onclick="handleChangePassword()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs transition border border-slate-700 cursor-pointer">Perbarui Password</button>
+                            </div>
+
+                            <div class="flex justify-end pt-4">
+                                <button onclick="saveSettings()" class="theme-gradient-btn px-6 py-2.5 font-semibold rounded-xl text-sm transition shadow-lg cursor-pointer">Simpan Pengaturan</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleImageUpload(e, field) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    state.companyProfile[field] = reader.result;
+                    if (field === 'logoUrl' && state.themeMode === 'logo') {
+                        const img = new Image();
+                        img.src = reader.result;
+                        img.onload = () => {
+                            state.dynamicLogoColor = extractDominantColor(img);
+                            applyTheme();
+                            renderSettings(document.getElementById('main-content'));
+                        };
+                    } else {
+                        renderSettings(document.getElementById('main-content'));
+                    }
+                    renderSidebar();
+                    if(field === 'logoUrl') updateLoginLogo();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleChangePassword() {
+            const newPass = document.getElementById('set-new-pass').value;
+            if(!newPass) {
+                alertCustom("Password baru tidak boleh kosong!");
+                return;
+            }
+            state.adminPassword = newPass;
+            document.getElementById('set-new-pass').value = '';
+            alertCustom("Password admin berhasil diperbarui.");
+        }
+
+        function saveSettings() {
+            state.companyProfile.name = document.getElementById('set-name').value;
+            state.companyProfile.directorName = document.getElementById('set-director').value;
+            state.companyProfile.bankInfo = document.getElementById('set-bank').value;
+            state.companyProfile.address = document.getElementById('set-address').value;
+            renderSidebar();
+            alertCustom("Pengaturan profil perusahaan berhasil disimpan!");
+        }
+
+        function openScheduleModal() {
+            const select = document.getElementById('schedule-team-select');
+            select.innerHTML = '<option value="Belum Ditugaskan">Belum Ditugaskan</option>' + state.teams.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+            document.getElementById('schedule-modal').classList.remove('hidden');
+        }
+
+        function closeScheduleModal() {
+            document.getElementById('schedule-modal').classList.add('hidden');
+        }
+
+        function handleCreateSchedule(e) {
+            e.preventDefault();
+            const form = e.target;
+            const client = form.client.value;
+            const location = form.location.value;
+            const area = form.area.value || '1.000 m²';
+            const date = form.date.value;
+            const time = form.time.value;
+            const team = form.team.value;
+
+            const newId = `JF-${String(state.schedules.length + 1).padStart(3, '0')}`;
+            state.schedules.push({
+                id: newId,
+                client,
+                location,
+                area,
+                date,
+                time,
+                status: 'Menunggu',
+                team
+            });
+
+            const areaNum = parseInt(area.replace(/[^0-9]/g, '')) || 1000;
+            const amount = areaNum * 3000;
+            const newTrxId = `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+            state.transactions.push({
+                id: newTrxId,
+                date: new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }),
+                client,
+                amount,
+                status: 'Menunggu',
+                area,
+                items: [{ desc: `Jasa Fogging Area (${area})`, qty: 1, price: amount }]
+            });
+
+            closeScheduleModal();
+            form.reset();
+            alertCustom("Jadwal operasional & invoice baru berhasil dibuat!");
+            if(state.activeTab === 'schedules') renderSchedules(document.getElementById('main-content'));
+            else if(state.activeTab === 'dashboard') renderDashboard(document.getElementById('main-content'));
+        }
+
+        function openInventoryModal(id = null) {
+            document.getElementById('inventory-edit-id').value = id || '';
+            if(id) {
+                const item = state.inventory.find(i => i.id === id);
+                document.getElementById('inventory-modal-title').innerText = "Edit Barang Inventaris";
+                document.getElementById('inv-name').value = item.name;
+                document.getElementById('inv-qty').value = item.qty;
+                document.getElementById('inv-unit').value = item.unit;
+            } else {
+                document.getElementById('inventory-modal-title').innerText = "Tambah Barang Baru";
+                document.getElementById('inv-name').value = '';
+                document.getElementById('inv-qty').value = '50';
+                document.getElementById('inv-unit').value = 'Liter';
+            }
+            document.getElementById('inventory-modal').classList.remove('hidden');
+        }
+
+        function closeInventoryModal() {
+            document.getElementById('inventory-modal').classList.add('hidden');
+        }
+
+        function handleSaveInventory(e) {
+            e.preventDefault();
+            const editId = document.getElementById('inventory-edit-id').value;
+            const name = document.getElementById('inv-name').value;
+            const qty = parseInt(document.getElementById('inv-qty').value) || 0;
+            const unit = document.getElementById('inv-unit').value;
+            const status = qty > 50 ? 'Aman' : 'Menipis';
+
+            if(editId) {
+                const item = state.inventory.find(i => i.id === editId);
+                if(item) {
+                    item.name = name;
+                    item.qty = qty;
+                    item.unit = unit;
+                    item.status = status;
+                }
+            } else {
+                state.inventory.push({
+                    id: `INV-${Date.now().toString().slice(-3)}`,
+                    name,
+                    qty,
+                    unit,
+                    status
+                });
+            }
+            closeInventoryModal();
+            alertCustom("Data inventaris berhasil disimpan.");
+            if(state.activeTab === 'inventory') renderInventory(document.getElementById('main-content'));
+        }
+
+        function openTeamModal(id) {
+            const team = state.teams.find(t => t.id === id);
+            if(team) {
+                document.getElementById('team-edit-id').value = team.id;
+                document.getElementById('team-name').value = team.name;
+                document.getElementById('team-leader').value = team.leader;
+                document.getElementById('team-members').value = team.members;
+                document.getElementById('team-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeTeamModal() {
+            document.getElementById('team-modal').classList.add('hidden');
+        }
+
+        function handleSaveTeam(e) {
+            e.preventDefault();
+            const id = document.getElementById('team-edit-id').value;
+            const team = state.teams.find(t => t.id === id);
+            if(team) {
+                team.name = document.getElementById('team-name').value;
+                team.leader = document.getElementById('team-leader').value;
+                team.members = parseInt(document.getElementById('team-members').value) || 1;
+            }
+            closeTeamModal();
+            alertCustom("Data tim berhasil diperbarui.");
+            if(state.activeTab === 'teams') renderTeams(document.getElementById('main-content'));
+        }
+
+        function openInvoiceModal(trxId) {
+            const trx = state.transactions.find(t => t.id === trxId);
+            if(!trx) return;
+            state.selectedInvoice = trx;
+
+            const modal = document.getElementById('invoice-modal');
+            const content = document.getElementById('invoice-content');
+
+            content.innerHTML = `
+                <div class="flex flex-col md:flex-row md:justify-between md:items-start border-b-2 border-slate-200 pb-6 md:pb-8 mb-6 md:mb-8 gap-6">
+                    <div class="flex items-center space-x-4">
+                        ${state.companyProfile.logoUrl ? `<img src="${state.companyProfile.logoUrl}" class="w-16 h-16 object-contain">` : `
+                            <svg viewBox="0 0 40 40" class="w-16 h-16 text-amber-600">
+                                <path fill="currentColor" d="M20 0L37.32 10V30L20 40L2.68 30V10L20 0ZM20 4L6.68 11.69V28.31L20 36L33.32 28.31V11.69L20 4Z" opacity="0.15"/>
+                                <path fill="none" stroke="currentColor" stroke-width="2" d="M20 2L38 10.5V29.5L20 38L2 29.5L10.5L20 2Z" />
+                                <text x="20" y="25" font-size="14" font-family="sans-serif" font-weight="bold" fill="currentColor" text-anchor="middle">JF</text>
+                            </svg>
+                        `}
+                        <div>
+                            <h1 class="text-xl md:text-2xl font-bold tracking-widest text-slate-900 uppercase leading-tight">${state.companyProfile.name}</h1>
+                            <p class="text-[10px] text-amber-700 font-semibold uppercase tracking-wider mt-0.5">JASA FOGGING KELILING MAKASSAR</p>
+                            <p class="text-xs text-slate-500 mt-2 whitespace-pre-line">${state.companyProfile.address}</p>
+                        </div>
+                    </div>
+                    <div class="text-left md:text-right">
+                        <h2 class="text-3xl md:text-4xl font-light text-slate-300 tracking-wider mb-2">INVOICE</h2>
+                        <p class="text-sm font-semibold text-slate-700">No: ${trx.id}</p>
+                        <p class="text-sm text-slate-500">Tanggal: ${trx.date}</p>
+                        <div class="mt-2">
+                            <span class="inline-block px-3 py-1 rounded-full text-[10px] md:text-xs font-bold border ${trx.status === 'Lunas' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'bg-amber-100 text-amber-700 border-amber-200'}">
+                                ${trx.status.toUpperCase()}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
+                    <div>
+                        <p class="text-sm text-slate-400 font-medium uppercase tracking-wider mb-2">Ditagihkan Kepada:</p>
+                        <h3 class="text-lg md:text-xl font-bold text-slate-800">${trx.client}</h3>
+                        <p class="text-sm text-slate-600 mt-1">Pelanggan Layanan Fogging</p>
+                    </div>
+                    <div class="bg-slate-50 px-4 py-3 rounded-xl border border-slate-200 shrink-0">
+                        <p class="text-xs text-slate-500 uppercase tracking-wider font-semibold">Luas Area Fogging</p>
+                        <p class="text-base font-bold text-slate-800 mt-0.5">${trx.area || '1.000 m²'}</p>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto mb-8">
+                    <table class="w-full text-left min-w-[500px]">
+                        <thead>
+                            <tr class="border-b-2 border-slate-800">
+                                <th class="py-3 text-xs md:text-sm font-bold text-slate-800">Deskripsi Layanan</th>
+                                <th class="py-3 text-xs md:text-sm font-bold text-slate-800 text-center">Qty</th>
+                                <th class="py-3 text-xs md:text-sm font-bold text-slate-800 text-right">Harga</th>
+                                <th class="py-3 text-xs md:text-sm font-bold text-slate-800 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-200">
+                            ${trx.items.map(item => `
+                                <tr>
+                                    <td class="py-3 text-xs md:text-sm text-slate-700">${item.desc}</td>
+                                    <td class="py-3 text-xs md:text-sm text-slate-700 text-center">${item.qty}</td>
+                                    <td class="py-3 text-xs md:text-sm text-slate-700 text-right">Rp ${item.price.toLocaleString('id-ID')}</td>
+                                    <td class="py-3 text-xs md:text-sm text-slate-700 text-right font-medium">Rp ${(item.qty * item.price).toLocaleString('id-ID')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-end mb-12">
+                    <div class="w-full md:w-72 space-y-3 bg-slate-50 p-4 rounded-lg md:bg-transparent md:p-0">
+                        <div class="flex justify-between text-sm text-slate-600"><span>Subtotal</span><span>Rp ${trx.amount.toLocaleString('id-ID')}</span></div>
+                        <div class="flex justify-between text-sm text-slate-600"><span>Pajak (0%)</span><span>Rp 0</span></div>
+                        <div class="flex justify-between text-base md:text-lg font-bold text-slate-900 border-t-2 border-slate-800 pt-3 mt-3">
+                            <span>Total Tagihan</span><span class="text-amber-600">Rp ${trx.amount.toLocaleString('id-ID')}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col-reverse md:flex-row justify-between items-center md:items-end gap-8">
+                    <div class="text-xs md:text-sm text-slate-500 w-full md:w-auto text-center md:text-left bg-slate-50 p-4 rounded-lg md:bg-transparent md:p-0">
+                        <p class="font-bold text-slate-700 mb-1">Informasi Pembayaran:</p>
+                        <p class="whitespace-pre-line">${state.companyProfile.bankInfo}</p>
+                    </div>
+                    <div class="text-center w-full md:w-auto">
+                        <p class="text-xs md:text-sm text-slate-600 mb-4">Makassar, ${trx.date}<br>Hormat Kami,</p>
+                        <div class="h-16 md:h-20 w-36 md:w-48 mx-auto flex items-center justify-center mb-2">
+                            ${state.companyProfile.signatureUrl ? `<img src="${state.companyProfile.signatureUrl}" class="max-h-full max-w-full object-contain mix-blend-multiply">` : `
+                                <svg viewBox="0 0 200 80" class="w-36 h-16 text-blue-900">
+                                    <path fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" d="M20,60 C30,30 45,10 60,40 C65,50 75,75 85,55 C95,35 110,10 120,40 C130,70 135,75 145,55 C155,35 170,20 180,45 C185,55 195,60 200,50" />
+                                </svg>
+                            `}
+                        </div>
+                        <p class="text-xs md:text-sm font-bold text-slate-800 border-t border-slate-300 pt-2 inline-block px-4">${state.companyProfile.directorName}</p>
+                        <p class="text-[10px] md:text-xs text-slate-500 mt-1">Direktur Operasional JFKM</p>
+                    </div>
+                </div>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function closeInvoiceModal() {
+            document.getElementById('invoice-modal').classList.add('hidden');
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('invoice-content');
+            const opt = {
+                margin: 0,
+                filename: `Invoice-${state.selectedInvoice?.id || 'JFKM'}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>
