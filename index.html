@@ -4,11 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JFKM - Manajemen Fogging Profesional</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- HTML2PDF CDN for invoice and report downloading -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <!-- Inter Font -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -56,7 +53,7 @@
                     <input required id="login-pass" type="password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-500 transition font-medium" placeholder="Masukkan password">
                 </div>
                 <button type="submit" id="login-btn" class="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-400 hover:from-amber-500 hover:to-amber-300 text-slate-950 font-bold rounded-xl transition shadow-[0_0_20px_rgba(245,158,11,0.3)] tracking-wide cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                    Masuk ke Sistem
+                    Memuat Sistem...
                 </button>
             </form>
             <div class="mt-6 text-center">
@@ -68,7 +65,6 @@
     <div class="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-amber-600/5 blur-[120px] pointer-events-none print:hidden"></div>
     <div class="fixed bottom-[-10%] right-[-10%] w-[30%] h-[40%] rounded-full bg-blue-600/5 blur-[120px] pointer-events-none print:hidden"></div>
 
-    <!-- Mobile Sidebar Overlay -->
     <div id="mobile-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40 md:hidden hidden" onclick="toggleMobileMenu(false)"></div>
 
     <aside id="sidebar" class="fixed md:sticky top-0 left-0 h-screen w-72 bg-slate-950/95 backdrop-blur-xl border-r border-slate-800/60 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col print:hidden">
@@ -125,14 +121,12 @@
             </div>
             
             <div class="flex items-center space-x-3 md:space-x-6 relative">
-                <!-- Notification Bell -->
                 <div class="relative" id="notif-container">
                     <button onclick="toggleNotifications()" class="text-slate-400 hover:text-amber-400 transition-colors relative p-2 cursor-pointer">
                         <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
                         <span id="notif-badge" class="absolute top-1 right-1 w-2.5 h-2.5 bg-amber-500 rounded-full border border-slate-950 shadow-[0_0_10px_rgba(245,158,11,0.5)]"></span>
                     </button>
 
-                    <!-- Notifications Dropdown -->
                     <div id="notif-dropdown" class="absolute right-0 mt-2 w-72 md:w-80 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden z-50 hidden animate-fade-in origin-top-right">
                         <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
                             <h3 class="text-sm font-semibold text-slate-200">Notifikasi</h3>
@@ -155,7 +149,6 @@
             </div>
         </header>
         
-        <!-- Main Content Area -->
         <div id="main-content" class="flex-1 overflow-y-auto pb-10 scroll-smooth">
             <!-- Dynamic View Rendered Here -->
         </div>
@@ -185,7 +178,7 @@
         </div>
     </div>
 
-    <!-- Firebase Cloud Storage Modules -->
+    <!-- Firebase SDK Modules -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -297,14 +290,67 @@
     </div>
 
     <script>
-        // Cloud Storage Logic
+        // Dual Persistence Engine (Firestore + IndexedDB Fallback)
         let db, auth, userId, appId;
+        const IDB_NAME = 'JFKM_Fogging_DB';
+        const IDB_STORE = 'state_store';
+
+        function idbOpen() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(IDB_NAME, 1);
+                req.onerror = () => reject(req.error);
+                req.onsuccess = () => resolve(req.result);
+                req.onupgradeneeded = e => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(IDB_STORE)) {
+                        db.createObjectStore(IDB_STORE);
+                    }
+                };
+            });
+        }
+
+        async function idbSave(data) {
+            try {
+                const db = await idbOpen();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(IDB_STORE, 'readwrite');
+                    const store = tx.objectStore(IDB_STORE);
+                    const req = store.put(data, 'mainState');
+                    req.onsuccess = () => resolve(true);
+                    req.onerror = () => reject(req.error);
+                });
+            } catch (err) {
+                console.error("IDB Save Error:", err);
+            }
+        }
+
+        async function idbLoad() {
+            try {
+                const db = await idbOpen();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(IDB_STORE, 'readonly');
+                    const store = tx.objectStore(IDB_STORE);
+                    const req = store.get('mainState');
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            } catch (err) {
+                console.error("IDB Load Error:", err);
+                return null;
+            }
+        }
 
         async function initFirebase() {
             const loginBtn = document.getElementById('login-btn');
             if (loginBtn) {
-                loginBtn.innerText = "Terhubung ke Cloud...";
+                loginBtn.innerText = "Memuat Sistem...";
                 loginBtn.disabled = true;
+            }
+
+            // Always load local IDB state first for instant availability
+            const localData = await idbLoad();
+            if (localData) {
+                applyLoadedState(localData);
             }
 
             if (typeof __firebase_config === 'undefined') {
@@ -312,7 +358,6 @@
                 return;
             }
             
-            // Tunggu modul cloud selesai dimuat dengan sistem polling (maks 5 detik)
             let retries = 0;
             while (typeof window.firebaseModules === 'undefined' && retries < 50) {
                 await new Promise(resolve => setTimeout(resolve, 100));
@@ -320,9 +365,8 @@
             }
             
             if (typeof window.firebaseModules === 'undefined') {
-                console.error("Modul Firebase gagal dimuat. Koneksi internet mungkin terputus.");
-                alertCustom("Gagal terhubung ke Cloud. Data akan disimpan secara lokal sementara.");
-                if (loginBtn) { loginBtn.innerText = "Masuk (Mode Offline)"; loginBtn.disabled = false; }
+                console.warn("Modul Cloud tidak dimuat, menggunakan database lokal IndexedDB.");
+                if (loginBtn) { loginBtn.innerText = "Masuk ke Sistem"; loginBtn.disabled = false; }
                 return;
             }
 
@@ -335,12 +379,10 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                // Autentikasi dengan token yang divalidasi
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     try {
                         await signInWithCustomToken(auth, __initial_auth_token);
                     } catch (e) {
-                        console.warn("Login dengan custom token gagal, beralih ke mode anonim", e);
                         await signInAnonymously(auth);
                     }
                 } else {
@@ -350,60 +392,54 @@
                 userId = auth.currentUser?.uid;
                 await loadStateFromCloud();
                 
-                // Re-render UI after state loaded
-                updateLoginLogo();
-                applyTheme();
-                renderSidebar();
-                renderNotifications();
-                
                 if (loginBtn) {
                     loginBtn.innerText = "Masuk ke Sistem";
                     loginBtn.disabled = false;
                 }
 
-                // Refresh active tab if already logged in
                 if (state.isLoggedIn && document.getElementById('login-overlay').style.display === 'none') {
                     switchTab(state.activeTab);
                 }
             } catch (err) {
-                console.error("Firebase init error:", err);
-                if (loginBtn) { loginBtn.innerText = "Masuk (Error)"; loginBtn.disabled = false; }
+                console.error("Cloud init warning:", err);
+                if (loginBtn) { loginBtn.innerText = "Masuk ke Sistem"; loginBtn.disabled = false; }
             }
         }
         
+        function applyLoadedState(cloudState) {
+            state.companyProfile = cloudState.companyProfile || state.companyProfile;
+            state.themeMode = cloudState.themeMode || state.themeMode;
+            state.dynamicLogoColor = cloudState.dynamicLogoColor || state.dynamicLogoColor;
+            state.adminPassword = cloudState.adminPassword || state.adminPassword;
+            state.schedules = cloudState.schedules || state.schedules;
+            state.transactions = cloudState.transactions || state.transactions;
+            state.teams = cloudState.teams || state.teams;
+            state.inventory = cloudState.inventory || state.inventory;
+            state.notifications = cloudState.notifications || state.notifications;
+
+            updateLoginLogo();
+            applyTheme();
+            renderSidebar();
+            renderNotifications();
+        }
+
         async function loadStateFromCloud() {
-            if (!auth || !auth.currentUser) return;
+            if (!auth || !auth.currentUser || !db) return;
             const { doc, getDoc } = window.firebaseModules;
-            // Gunakan jalur public data agar data persisten walau ID user anonim berubah saat iframe reload
             const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'appState', 'main');
             try {
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const cloudState = docSnap.data();
-                    // Override default state with Cloud data
-                    state.companyProfile = cloudState.companyProfile || state.companyProfile;
-                    state.themeMode = cloudState.themeMode || state.themeMode;
-                    state.dynamicLogoColor = cloudState.dynamicLogoColor || state.dynamicLogoColor;
-                    state.adminPassword = cloudState.adminPassword || state.adminPassword;
-                    state.schedules = cloudState.schedules || state.schedules;
-                    state.transactions = cloudState.transactions || state.transactions;
-                    state.teams = cloudState.teams || state.teams;
-                    state.inventory = cloudState.inventory || state.inventory;
-                    state.notifications = cloudState.notifications || state.notifications;
+                    applyLoadedState(cloudState);
+                    await idbSave(cloudState); // Sync cloud to local IDB
                 }
             } catch (error) {
-                console.error("Error loading data:", error);
+                console.error("Error loading cloud data:", error);
             }
         }
 
         async function saveStateToCloud() {
-            if (!auth || !auth.currentUser || !db) {
-                console.warn("Cloud belum siap, gagal menyimpan data permanen.");
-                return;
-            }
-            const { doc, setDoc } = window.firebaseModules;
-            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'appState', 'main');
-            
             const stateToSave = {
                 companyProfile: state.companyProfile,
                 themeMode: state.themeMode,
@@ -416,16 +452,21 @@
                 notifications: state.notifications
             };
 
-            try {
-                await setDoc(docRef, stateToSave);
-            } catch (error) {
-                console.error("Error saving data:", error);
-                if(error.code === 'resource-exhausted') alertCustom("Gagal menyimpan. Ukuran file logo/TTD terlalu besar.");
-                else alertCustom("Gagal menyimpan ke Cloud. Periksa koneksi Anda.");
+            // Always save locally to IndexedDB instantly
+            await idbSave(stateToSave);
+
+            // Sync to Firestore in background if ready
+            if (auth && auth.currentUser && db) {
+                try {
+                    const { doc, setDoc } = window.firebaseModules;
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'appState', 'main');
+                    await setDoc(docRef, stateToSave);
+                } catch (error) {
+                    console.error("Cloud sync warning:", error);
+                }
             }
         }
 
-        // Image compressor to prevent storage limit issues and preserve transparency
         function compressImage(file, callback) {
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -446,7 +487,6 @@
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    // Gunakan image/png agar format transparan (seperti TTD) tidak berubah menjadi hitam
                     callback(canvas.toDataURL('image/png'));
                 }
                 img.onerror = function() {
@@ -462,7 +502,7 @@
             activeTab: 'dashboard',
             scheduleFilter: 'Semua',
             adminPassword: 'admin',
-            themeMode: 'gold', // 'gold', 'emerald', 'logo'
+            themeMode: 'gold', 
             dynamicLogoColor: '#f59e0b',
             weather: { temp: '-', condition: 'Memuat...', desc: 'Mengambil data satelit cuaca terkini...', wind: '-', humidity: '-' },
             companyProfile: {
@@ -534,17 +574,13 @@
             updateLoginLogo();
             applyTheme();
             
-            // Mulai sinkronisasi cloud dengan aman
             initFirebase();
-
-            // Fetch real-time weather and set interval (update every 10 minutes)
             fetchRealtimeWeather();
             setInterval(fetchRealtimeWeather, 600000);
         });
 
         async function fetchRealtimeWeather() {
             try {
-                // Titik Koordinat Makassar
                 const url = 'https://api.open-meteo.com/v1/forecast?latitude=-5.1477&longitude=119.4327&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m';
                 const res = await fetch(url);
                 const data = await res.json();
@@ -566,7 +602,6 @@
                     humidity: data.current.relative_humidity_2m + '%'
                 };
 
-                // Perbarui tampilan dashboard jika sedang aktif
                 if (state.activeTab === 'dashboard' && document.getElementById('main-content')) {
                     renderDashboard(document.getElementById('main-content'));
                 }
@@ -599,7 +634,6 @@
             } else if (state.themeMode === 'logo' && state.companyProfile.logoUrl) {
                 return { from: state.dynamicLogoColor, to: lightenColor(state.dynamicLogoColor, 30), text: state.dynamicLogoColor, border: hexToRgba(state.dynamicLogoColor, 0.2), bgGlow: hexToRgba(state.dynamicLogoColor, 0.1) };
             }
-            // Default Gold/Amber
             return { from: '#d97706', to: '#fbbf24', text: '#f59e0b', border: 'rgba(245, 158, 11, 0.2)', bgGlow: 'rgba(245, 158, 11, 0.1)' };
         }
 
@@ -998,28 +1032,28 @@
             renderSchedules(document.getElementById('main-content'));
         }
 
-        function updateScheduleStatus(id, newStatus) {
+        async function updateScheduleStatus(id, newStatus) {
             const sched = state.schedules.find(s => s.id === id);
             if(sched) {
                 sched.status = newStatus;
-                saveStateToCloud();
+                await saveStateToCloud();
             }
             renderSchedules(document.getElementById('main-content'));
         }
 
-        function clearCompletedSchedules() {
+        async function clearCompletedSchedules() {
             const initialCount = state.schedules.length;
             state.schedules = state.schedules.filter(s => s.status !== 'Selesai');
             const removedCount = initialCount - state.schedules.length;
             renderSchedules(document.getElementById('main-content'));
-            saveStateToCloud();
+            await saveStateToCloud();
             alertCustom(`${removedCount} jadwal berstatus 'Selesai' berhasil dihapus.`);
         }
 
-        function monthlyResetSchedules() {
+        async function monthlyResetSchedules() {
             state.schedules = [];
             renderSchedules(document.getElementById('main-content'));
-            saveStateToCloud();
+            await saveStateToCloud();
             alertCustom("Reset bulanan berhasil. Seluruh jadwal telah dikosongkan untuk periode baru.");
         }
 
@@ -1092,19 +1126,19 @@
             `;
         }
 
-        function payTransaction(id) {
+        async function payTransaction(id) {
             const trx = state.transactions.find(t => t.id === id);
             if(trx) {
                 trx.status = 'Lunas';
-                saveStateToCloud();
+                await saveStateToCloud();
             }
             renderFinance(document.getElementById('main-content'));
         }
 
-        function deleteTransaction(id) {
+        async function deleteTransaction(id) {
             state.transactions = state.transactions.filter(t => t.id !== id);
             renderFinance(document.getElementById('main-content'));
-            saveStateToCloud();
+            await saveStateToCloud();
             alertCustom("Transaksi/Invoice berhasil dihapus.");
         }
 
@@ -1271,11 +1305,11 @@
             `;
         }
 
-        function toggleTeamStatus(id) {
+        async function toggleTeamStatus(id) {
             const team = state.teams.find(t => t.id === id);
             if(team) {
                 team.status = team.status === 'Standby' ? 'Lapangan' : team.status === 'Lapangan' ? 'Cuti' : 'Standby';
-                saveStateToCloud();
+                await saveStateToCloud();
             }
             renderTeams(document.getElementById('main-content'));
         }
@@ -1327,12 +1361,12 @@
             `;
         }
 
-        function adjustInventoryQty(id, amount) {
+        async function adjustInventoryQty(id, amount) {
             const item = state.inventory.find(i => i.id === id);
             if(item) {
                 item.qty = Math.max(0, item.qty + amount);
                 item.status = item.qty > 50 ? 'Aman' : 'Menipis';
-                saveStateToCloud();
+                await saveStateToCloud();
             }
             renderInventory(document.getElementById('main-content'));
         }
@@ -1371,7 +1405,6 @@
                                 </div>
                             </div>
 
-                            <!-- Tema Warna Aplikasi -->
                             <div class="pt-6 border-t border-slate-800/60 space-y-4">
                                 <h4 class="text-sm font-medium text-slate-200">Pilihan Tema Warna Aplikasi</h4>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1452,7 +1485,7 @@
         function handleImageUpload(e, field) {
             const file = e.target.files[0];
             if(file) {
-                alertCustom("Memproses dan menyimpan gambar...");
+                alertCustom("Memproses dan mengompresi gambar...");
                 compressImage(file, async (compressedDataUrl) => {
                     state.companyProfile[field] = compressedDataUrl;
                     if (field === 'logoUrl' && state.themeMode === 'logo') {
@@ -1463,13 +1496,13 @@
                             applyTheme();
                             if (state.activeTab === 'settings') renderSettings(document.getElementById('main-content'));
                             await saveStateToCloud();
-                            alertCustom("Gambar berhasil diunggah!");
+                            alertCustom("Gambar berhasil diunggah dan disimpan permanen!");
                         };
                     } else {
                         applyTheme();
                         if (state.activeTab === 'settings') renderSettings(document.getElementById('main-content'));
                         await saveStateToCloud();
-                        alertCustom("Gambar berhasil diunggah!");
+                        alertCustom("Gambar berhasil diunggah dan disimpan permanen!");
                     }
                     renderSidebar();
                     if(field === 'logoUrl') updateLoginLogo();
@@ -1477,7 +1510,7 @@
             }
         }
 
-        function handleChangePassword() {
+        async function handleChangePassword() {
             const newPass = document.getElementById('set-new-pass').value;
             if(!newPass) {
                 alertCustom("Password baru tidak boleh kosong!");
@@ -1485,7 +1518,7 @@
             }
             state.adminPassword = newPass;
             document.getElementById('set-new-pass').value = '';
-            saveStateToCloud();
+            await saveStateToCloud();
             alertCustom("Password admin berhasil diperbarui.");
         }
 
@@ -1496,7 +1529,7 @@
             state.companyProfile.address = document.getElementById('set-address').value;
             renderSidebar();
             await saveStateToCloud();
-            alertCustom("Pengaturan profil perusahaan berhasil disimpan!");
+            alertCustom("Pengaturan profil perusahaan berhasil disimpan permanen!");
         }
 
         function openScheduleModal() {
@@ -1509,7 +1542,7 @@
             document.getElementById('schedule-modal').classList.add('hidden');
         }
 
-        function handleCreateSchedule(e) {
+        async function handleCreateSchedule(e) {
             e.preventDefault();
             const form = e.target;
             const client = form.client.value;
@@ -1546,7 +1579,7 @@
 
             closeScheduleModal();
             form.reset();
-            saveStateToCloud();
+            await saveStateToCloud();
             alertCustom("Jadwal operasional & invoice baru berhasil dibuat!");
             if(state.activeTab === 'schedules') renderSchedules(document.getElementById('main-content'));
             else if(state.activeTab === 'dashboard') renderDashboard(document.getElementById('main-content'));
@@ -1573,7 +1606,7 @@
             document.getElementById('inventory-modal').classList.add('hidden');
         }
 
-        function handleSaveInventory(e) {
+        async function handleSaveInventory(e) {
             e.preventDefault();
             const editId = document.getElementById('inventory-edit-id').value;
             const name = document.getElementById('inv-name').value;
@@ -1599,7 +1632,7 @@
                 });
             }
             closeInventoryModal();
-            saveStateToCloud();
+            await saveStateToCloud();
             alertCustom("Data inventaris berhasil disimpan.");
             if(state.activeTab === 'inventory') renderInventory(document.getElementById('main-content'));
         }
@@ -1619,7 +1652,7 @@
             document.getElementById('team-modal').classList.add('hidden');
         }
 
-        function handleSaveTeam(e) {
+        async function handleSaveTeam(e) {
             e.preventDefault();
             const id = document.getElementById('team-edit-id').value;
             const team = state.teams.find(t => t.id === id);
@@ -1629,7 +1662,7 @@
                 team.members = parseInt(document.getElementById('team-members').value) || 1;
             }
             closeTeamModal();
-            saveStateToCloud();
+            await saveStateToCloud();
             alertCustom("Data tim berhasil diperbarui.");
             if(state.activeTab === 'teams') renderTeams(document.getElementById('main-content'));
         }
