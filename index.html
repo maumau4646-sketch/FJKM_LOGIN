@@ -301,7 +301,20 @@
         let db, auth, userId, appId;
 
         async function initFirebase() {
-            if (typeof window.firebaseModules === 'undefined' || typeof __firebase_config === 'undefined') return;
+            if (typeof __firebase_config === 'undefined') return;
+            
+            // Tunggu modul cloud selesai dimuat dengan sistem polling (maks 5 detik)
+            let retries = 0;
+            while (typeof window.firebaseModules === 'undefined' && retries < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                retries++;
+            }
+            
+            if (typeof window.firebaseModules === 'undefined') {
+                console.error("Modul Firebase gagal dimuat. Koneksi internet mungkin terputus.");
+                return;
+            }
+
             try {
                 const config = JSON.parse(__firebase_config);
                 appId = typeof __app_id !== 'undefined' ? __app_id : 'jfkm-app';
@@ -311,8 +324,14 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
 
-                if (typeof __initial_auth_token !== 'undefined') {
-                    await signInWithCustomToken(auth, __initial_auth_token);
+                // Autentikasi dengan token yang divalidasi
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } catch (e) {
+                        console.warn("Login dengan custom token gagal, beralih ke mode anonim", e);
+                        await signInAnonymously(auth);
+                    }
                 } else {
                     await signInAnonymously(auth);
                 }
@@ -488,8 +507,9 @@
             renderNotifications();
             updateLoginLogo();
             applyTheme();
-            // Start cloud synchronization safely
-            setTimeout(initFirebase, 100);
+            
+            // Mulai sinkronisasi cloud dengan aman
+            initFirebase();
 
             // Fetch real-time weather and set interval (update every 10 minutes)
             fetchRealtimeWeather();
