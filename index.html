@@ -53,9 +53,9 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Password</label>
-                    <input required id="login-pass" type="password" value="admin" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-500 transition font-medium" placeholder="Masukkan password">
+                    <input required id="login-pass" type="password" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:outline-none focus:border-amber-500 transition font-medium" placeholder="Masukkan password">
                 </div>
-                <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-400 hover:from-amber-500 hover:to-amber-300 text-slate-950 font-bold rounded-xl transition shadow-[0_0_20px_rgba(245,158,11,0.3)] tracking-wide cursor-pointer">
+                <button type="submit" id="login-btn" class="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-400 hover:from-amber-500 hover:to-amber-300 text-slate-950 font-bold rounded-xl transition shadow-[0_0_20px_rgba(245,158,11,0.3)] tracking-wide cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                     Masuk ke Sistem
                 </button>
             </form>
@@ -301,7 +301,16 @@
         let db, auth, userId, appId;
 
         async function initFirebase() {
-            if (typeof __firebase_config === 'undefined') return;
+            const loginBtn = document.getElementById('login-btn');
+            if (loginBtn) {
+                loginBtn.innerText = "Terhubung ke Cloud...";
+                loginBtn.disabled = true;
+            }
+
+            if (typeof __firebase_config === 'undefined') {
+                if (loginBtn) { loginBtn.innerText = "Masuk ke Sistem"; loginBtn.disabled = false; }
+                return;
+            }
             
             // Tunggu modul cloud selesai dimuat dengan sistem polling (maks 5 detik)
             let retries = 0;
@@ -312,6 +321,8 @@
             
             if (typeof window.firebaseModules === 'undefined') {
                 console.error("Modul Firebase gagal dimuat. Koneksi internet mungkin terputus.");
+                alertCustom("Gagal terhubung ke Cloud. Data akan disimpan secara lokal sementara.");
+                if (loginBtn) { loginBtn.innerText = "Masuk (Mode Offline)"; loginBtn.disabled = false; }
                 return;
             }
 
@@ -345,12 +356,18 @@
                 renderSidebar();
                 renderNotifications();
                 
+                if (loginBtn) {
+                    loginBtn.innerText = "Masuk ke Sistem";
+                    loginBtn.disabled = false;
+                }
+
                 // Refresh active tab if already logged in
                 if (state.isLoggedIn && document.getElementById('login-overlay').style.display === 'none') {
                     switchTab(state.activeTab);
                 }
             } catch (err) {
                 console.error("Firebase init error:", err);
+                if (loginBtn) { loginBtn.innerText = "Masuk (Error)"; loginBtn.disabled = false; }
             }
         }
         
@@ -379,7 +396,10 @@
         }
 
         async function saveStateToCloud() {
-            if (!userId || !db) return;
+            if (!userId || !db) {
+                console.warn("Cloud belum siap, gagal menyimpan data permanen.");
+                return;
+            }
             const { doc, setDoc } = window.firebaseModules;
             const docRef = doc(db, 'artifacts', appId, 'users', userId, 'appState', 'main');
             
@@ -399,7 +419,8 @@
                 await setDoc(docRef, stateToSave);
             } catch (error) {
                 console.error("Error saving data:", error);
-                if(error.code === 'resource-exhausted') alertCustom("Gagal menyimpan. Ukuran data gambar terlalu besar.");
+                if(error.code === 'resource-exhausted') alertCustom("Gagal menyimpan. Ukuran file logo/TTD terlalu besar.");
+                else alertCustom("Gagal menyimpan ke Cloud. Periksa koneksi Anda.");
             }
         }
 
@@ -425,6 +446,9 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     callback(canvas.toDataURL('image/jpeg', 0.8));
+                }
+                img.onerror = function() {
+                    alertCustom("Gagal memproses gambar. Pastikan file valid.");
                 }
                 img.src = e.target.result;
             }
@@ -634,21 +658,21 @@
             `;
         }
 
-        function setThemeMode(mode) {
+        async function setThemeMode(mode) {
             state.themeMode = mode;
             if (mode === 'logo' && state.companyProfile.logoUrl) {
                 const img = new Image();
                 img.src = state.companyProfile.logoUrl;
-                img.onload = () => {
+                img.onload = async () => {
                     state.dynamicLogoColor = extractDominantColor(img);
                     applyTheme();
                     if (state.activeTab === 'settings') renderSettings(document.getElementById('main-content'));
-                    saveStateToCloud();
+                    await saveStateToCloud();
                 };
             } else {
                 applyTheme();
                 if (state.activeTab === 'settings') renderSettings(document.getElementById('main-content'));
-                saveStateToCloud();
+                await saveStateToCloud();
             }
             alertCustom(`Tema berhasil diubah ke mode: ${mode === 'gold' ? 'Emas Mewah' : mode === 'emerald' ? 'Zamrud Hijau' : 'Sesuai Warna Logo'}`);
         }
@@ -1426,20 +1450,24 @@
         function handleImageUpload(e, field) {
             const file = e.target.files[0];
             if(file) {
-                compressImage(file, (compressedDataUrl) => {
+                alertCustom("Memproses dan menyimpan gambar...");
+                compressImage(file, async (compressedDataUrl) => {
                     state.companyProfile[field] = compressedDataUrl;
                     if (field === 'logoUrl' && state.themeMode === 'logo') {
                         const img = new Image();
                         img.src = compressedDataUrl;
-                        img.onload = () => {
+                        img.onload = async () => {
                             state.dynamicLogoColor = extractDominantColor(img);
                             applyTheme();
-                            renderSettings(document.getElementById('main-content'));
-                            saveStateToCloud();
+                            if (state.activeTab === 'settings') renderSettings(document.getElementById('main-content'));
+                            await saveStateToCloud();
+                            alertCustom("Gambar berhasil diunggah!");
                         };
                     } else {
-                        renderSettings(document.getElementById('main-content'));
-                        saveStateToCloud();
+                        applyTheme();
+                        if (state.activeTab === 'settings') renderSettings(document.getElementById('main-content'));
+                        await saveStateToCloud();
+                        alertCustom("Gambar berhasil diunggah!");
                     }
                     renderSidebar();
                     if(field === 'logoUrl') updateLoginLogo();
@@ -1459,13 +1487,13 @@
             alertCustom("Password admin berhasil diperbarui.");
         }
 
-        function saveSettings() {
+        async function saveSettings() {
             state.companyProfile.name = document.getElementById('set-name').value;
             state.companyProfile.directorName = document.getElementById('set-director').value;
             state.companyProfile.bankInfo = document.getElementById('set-bank').value;
             state.companyProfile.address = document.getElementById('set-address').value;
             renderSidebar();
-            saveStateToCloud();
+            await saveStateToCloud();
             alertCustom("Pengaturan profil perusahaan berhasil disimpan!");
         }
 
